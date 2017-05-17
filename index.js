@@ -45,7 +45,7 @@ authorize.then(function(auth) {
 	return listMessageIds(auth)
 			.then(mids => { return getBodies(auth, mids); })
 			.then(msgs => msgs.map(msg => {
-				var urls = /href="([^"]+)"/gi.exec(buf);
+				var urls = /href="([^"]+)"/gi.exec(msg.body);
 				for(var j = 1; j < urls.length; j++)
 					console.log(urls[j]);
 			}));
@@ -100,27 +100,6 @@ function storeToken(token) {
   console.log('Token stored to ' + TOKEN_PATH);
 }
 
-  var gmail = google.gmail('v1');
-  gmail.users.labels.list({
-    auth: auth,
-    userId: 'me',
-  }, function(err, response) {
-    if (err) {
-      console.log('The API returned an error: ' + err);
-      return;
-    }
-    var labels = response.labels;
-    if (labels.length == 0) {
-      console.log('No labels found.');
-    } else {
-      console.log('Labels:');
-      for (var i = 0; i < labels.length; i++) {
-        var label = labels[i];
-        console.log('- %s', label.name);
-      }
-    }
-  });
-}
 /**
  * Lists the labels in the user's account.
  *
@@ -130,8 +109,8 @@ function listMessageIds(auth) {
 	return new Promise(function(resolve, reject){
 		var gmail = google.gmail('v1');
 		gmail.users.messages.list({
-		auth: auth,
-		userId: 'me',
+			auth: auth,
+			userId: 'me',
 		}, function(err, response) {
 			if (err) {
 				console.log('The API returned an error: ' + err);
@@ -150,7 +129,7 @@ function listMessageIds(auth) {
 }
 
 function getBodies(auth, messageIds){
-	return new Promise.all(messageIds.map(id => getMessage(auth, id)));
+	return Promise.all(messageIds.map(id => getMessage(auth, id)));
 }
 
 function getMessage(auth, id){
