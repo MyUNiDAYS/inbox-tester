@@ -6,45 +6,50 @@ var googleAuth = require('google-auth-library');
 // If modifying these scopes, delete your previously saved credentials
 // at ~/.credentials/gmail-nodejs-quickstart.json
 var SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
-var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
-    process.env.USERPROFILE) + '/.credentials/';
+var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + '/.credentials/';
 var TOKEN_PATH = TOKEN_DIR + 'gmail-nodejs-quickstart.json';
+var CLIENT_SECRET_PATH = 'client_secret.json';
 
-// Load client secrets from a local file.
-fs.readFile('client_secret.json', function processClientSecrets(err, content) {
-  if (err) {
-    console.log('Error loading client secret file: ' + err);
-    return;
-  }
-  // Authorize a client with the loaded credentials, then call the
-  // Gmail API.
-  authorize(JSON.parse(content), getBodies);
+
+var authorize = function() {
+	return new Promise(function(resolve, reject){
+		fs.readFile(CLIENT_SECRET_PATH, function processClientSecrets(err, content) {
+			if (err)
+				reject(err);
+			else
+			{
+				var credentials = JSON.parse(content);
+				
+				var clientSecret = credentials.installed.client_secret;
+				var clientId = credentials.installed.client_id;
+				var redirectUrl = credentials.installed.redirect_uris[0];
+				var auth = new googleAuth();
+				var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+
+				// Check if we have previously stored a token.
+				fs.readFile(TOKEN_PATH, function(err, token) {
+					if (err) {
+						getNewToken(oauth2Client, resolve);
+					} else {
+						oauth2Client.credentials = JSON.parse(token);
+						resolve(oauth2Client);
+					}
+				});
+			}
+		});
+	});	
+}();
+
+
+authorize.then(function(auth) {
+	return listMessageIds(auth)
+			.then(mids => { return getBodies(auth, mids); })
+			.then(msgs => msgs.map(msg => {
+				var urls = /href="([^"]+)"/gi.exec(buf);
+				for(var j = 1; j < urls.length; j++)
+					console.log(urls[j]);
+			}));
 });
-
-/**
- * Create an OAuth2 client with the given credentials, and then execute the
- * given callback function.
- *
- * @param {Object} credentials The authorization client credentials.
- * @param {function} callback The callback to call with the authorized client.
- */
-function authorize(credentials, callback) {
-  var clientSecret = credentials.installed.client_secret;
-  var clientId = credentials.installed.client_id;
-  var redirectUrl = credentials.installed.redirect_uris[0];
-  var auth = new googleAuth();
-  var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
-
-  // Check if we have previously stored a token.
-  fs.readFile(TOKEN_PATH, function(err, token) {
-    if (err) {
-      getNewToken(oauth2Client, callback);
-    } else {
-      oauth2Client.credentials = JSON.parse(token);
-      callback(oauth2Client);
-    }
-  });
-}
 
 /**
  * Get and store new token after prompting for user authorization, and then
@@ -95,12 +100,6 @@ function storeToken(token) {
   console.log('Token stored to ' + TOKEN_PATH);
 }
 
-/**
- * Lists the labels in the user's account.
- *
- * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
- */
-function listLabels(auth) {
   var gmail = google.gmail('v1');
   gmail.users.labels.list({
     auth: auth,
@@ -127,7 +126,7 @@ function listLabels(auth) {
  *
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
  */
-function listMessages(auth) {
+function listMessageIds(auth) {
 	return new Promise(function(resolve, reject){
 		var gmail = google.gmail('v1');
 		gmail.users.messages.list({
@@ -137,10 +136,11 @@ function listMessages(auth) {
 			if (err) {
 				console.log('The API returned an error: ' + err);
 				reject(err);
+				return;
 			}
+			
 			var messages = response.messages;
-				if (messages.length == 0) {
-				console.log('No messages found.');
+			if (messages.length == 0) {
 				resolve([]);
 			} else {
 				resolve(messages.map(m => m.id));
@@ -149,44 +149,40 @@ function listMessages(auth) {
 	});
 }
 
-function getMessage(auth, id){
-  var gmail = google.gmail('v1');
-  gmail.users.messages.get({
-    auth: auth,
-    userId: 'me',
-	id: id
-  }, function(err, response) {
-    if (err) {
-      console.log('The API returned an error: ' + err);
-      return;
-    }
-	
-	//for(var i = 0; i < response.payload.headers.length; i++)
-	//	console.log(response.payload.headers[i]);
-	
-	
-	for(var i = 0; i < response.payload.parts.length; i++)
-	{
-		//console.log(response.payload.parts[i]);
-		
-		var part = response.payload.parts[i];
-		if(part.mimeType == 'text/html') {
-			var buf = Buffer.from(part.body.data, 'base64').toString("utf-8");
-			
-			var urls = /href="([^"]+)"/gi.exec(buf);
-			for(var j = 1; j < urls.length; j++)
-				console.log(urls[j]);
-			//console.log(part.body.data);
-		}
-	}	
-	
-  });
+function getBodies(auth, messageIds){
+	return new Promise.all(messageIds.map(id => getMessage(auth, id)));
 }
 
-function getBodies(auth){
-	listMessages(auth).then(function(messageIds){		
-		for(var i = 0; i < messageIds.length; i++){
-			getMessage(auth, messageIds[i]);
-		}
+function getMessage(auth, id){
+	return new Promise((resolve, reject) => {
+		var gmail = google.gmail('v1');
+		gmail.users.messages.get({
+			auth: auth,
+			userId: 'me',
+			id: id
+		}, function(err, response) {
+			if (err) {
+				console.log('The API returned an error: ' + err);
+				return;
+			}
+			
+			for(var i = 0; i < response.payload.parts.length; i++)
+			{
+				var part = response.payload.parts[i];
+				if(part.mimeType == 'text/html') {
+					var buf = Buffer.from(part.body.data, 'base64').toString("utf-8");
+					resolve({
+						id: id,
+						body: buf
+					});
+					return;
+				}
+			}
+			
+			resolve({
+				id: id,
+				body: null
+			})
+		});
 	});
 }
