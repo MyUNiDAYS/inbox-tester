@@ -1,0 +1,24 @@
+{
+  "name": "inbox-tester",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MyUNiDAYS/inbox-tester.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MyUNiDAYS/inbox-tester/issues"
+  },
+  "homepage": "https://github.com/MyUNiDAYS/inbox-tester#readme",
+  "dependencies": {
+    "google-auth-library": "^0.10.0",
+    "googleapis": "^19.0.0",
+    "readline": "^1.3.0"
+  }
+}
