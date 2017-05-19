@@ -1,17 +1,16 @@
 var fs = require('fs');
 var readline = require('readline');
-var google = require('googleapis');
 var googleAuth = require('google-auth-library');
 
 // If modifying these scopes, delete your previously saved credentials
-// at ~/.credentials/gmail-nodejs-quickstart.json
-var SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
+// at ~/.credentials/inbox-tester.json
+var SCOPES = ['https://mail.google.com/'];
 var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + '/.credentials/';
-var TOKEN_PATH = TOKEN_DIR + 'gmail-nodejs-quickstart.json';
-var CLIENT_SECRET_PATH = 'client_secret.json';
+var TOKEN_PATH = TOKEN_DIR + 'inbox-tester.json';
+var CLIENT_SECRET_PATH = '../client_secret.json';
 
 
-var authorize = function() {
+exports.authorize = function() {
 	return new Promise(function(resolve, reject){
 		fs.readFile(CLIENT_SECRET_PATH, function processClientSecrets(err, content) {
 			if (err)
@@ -40,16 +39,6 @@ var authorize = function() {
 	});	
 }();
 
-
-authorize.then(function(auth) {
-	return listMessageIds(auth)
-			.then(mids => { return getBodies(auth, mids); })
-			.then(msgs => msgs.map(msg => {
-				var urls = /href="([^"]+)"/gi.exec(msg.body);
-				for(var j = 1; j < urls.length; j++)
-					console.log(urls[j]);
-			}));
-});
 
 /**
  * Get and store new token after prompting for user authorization, and then
@@ -98,70 +87,4 @@ function storeToken(token) {
   }
   fs.writeFile(TOKEN_PATH, JSON.stringify(token));
   console.log('Token stored to ' + TOKEN_PATH);
-}
-
-/**
- * Lists the labels in the user's account.
- *
- * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
- */
-function listMessageIds(auth) {
-	return new Promise(function(resolve, reject){
-		var gmail = google.gmail('v1');
-		gmail.users.messages.list({
-			auth: auth,
-			userId: 'me',
-		}, function(err, response) {
-			if (err) {
-				console.log('The API returned an error: ' + err);
-				reject(err);
-				return;
-			}
-			
-			var messages = response.messages;
-			if (messages.length == 0) {
-				resolve([]);
-			} else {
-				resolve(messages.map(m => m.id));
-			}
-		});
-	});
-}
-
-function getBodies(auth, messageIds){
-	return Promise.all(messageIds.map(id => getMessage(auth, id)));
-}
-
-function getMessage(auth, id){
-	return new Promise((resolve, reject) => {
-		var gmail = google.gmail('v1');
-		gmail.users.messages.get({
-			auth: auth,
-			userId: 'me',
-			id: id
-		}, function(err, response) {
-			if (err) {
-				console.log('The API returned an error: ' + err);
-				return;
-			}
-			
-			for(var i = 0; i < response.payload.parts.length; i++)
-			{
-				var part = response.payload.parts[i];
-				if(part.mimeType == 'text/html') {
-					var buf = Buffer.from(part.body.data, 'base64').toString("utf-8");
-					resolve({
-						id: id,
-						body: buf
-					});
-					return;
-				}
-			}
-			
-			resolve({
-				id: id,
-				body: null
-			})
-		});
-	});
 }
