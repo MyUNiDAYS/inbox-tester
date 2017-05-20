@@ -1,6 +1,8 @@
 # inbox-tester
 
-A simple node web-server to provide inbox testing functionality.
+A simple node tool provide inbox testing functionality.
+
+Can be run as a webserver or imported directly into Nightwatch (for example)
 
 # Primary Use Cases
 
@@ -10,6 +12,15 @@ You have a Nightwatch (or similar) automated process which submits the reset pas
 You then want access to the reset URL contained within the contents of the email.
 
 This tool helps you retrieve that URL.
+
+You can provide a regex to filter the URLs - allowing you to search for a specific url, as well as filter the searched emails based on the TO header.
+
+The use case for TO filtering is address extensions, allowing you to use a single inbox for multiple users, e.g.
+
+* test.user@gmail.com
+* test.user+1@gmail.com
+* test.user+2@gmail.com
+* test.user+3@gmail.com
 
 # Setup
 
@@ -25,14 +36,23 @@ Copy the provided token back into the console, as instructed.
 
 # Usage
 
-Make a GET to /emails/find-url
+## Find urls in emails
 
-pass the following querystring parameters
+Make a `GET` to `/emails/find-url`
+
+The following querystring parameters are supported
 
 * `url` - a regex to apply to each `href=""` found within the email body
+* `to` - a string to match against the email address prefix (part before the @) in the TO header in the emails.
 
 e.g.
 
-GET /emails/find-url?url=%5Ehttp%3A%2F%2Fwww.mydomain.com%2Freset-password
+`GET /emails/find-url?url=%5Ehttp%3A%2F%2Fwww.mydomain.com%2Freset-password`
 
-(without URL encoding, for demonstrative purposes: GET /emails/find-url?url=^http://www.mydomain.com/reset-password)
+(without URL encoding, for demonstrative purposes: `GET /emails/find-url?url=^http://www.mydomain.com/reset-password`)
+
+## Delete an email
+
+Make a `DELETE` request to `/emails/<messageId>`
+
+where `<messageId>` is a `msgId` value obtained from the results of making a GET to `/emails/find-urls`

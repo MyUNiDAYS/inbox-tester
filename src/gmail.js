@@ -43,7 +43,7 @@ function listMessageIds(auth) {
 	});
 };
 
-function getBodies(auth, messageIds){
+function getMessages(auth, messageIds){
 	return Promise.all(messageIds.map(id => getMessage(auth, id)));
 }
 
@@ -60,6 +60,9 @@ function getMessage(auth, id){
 				return;
 			}
 			
+			var toHeaders = response.payload.headers.filter(h => h.name === 'To');
+			var to = toHeaders.length > 0 ? parseTo(toHeaders[0].value) : null;
+						
 			for(var i = 0; i < response.payload.parts.length; i++)
 			{
 				var part = response.payload.parts[i];
@@ -67,6 +70,7 @@ function getMessage(auth, id){
 					var buf = Buffer.from(part.body.data, 'base64').toString("utf-8");
 					resolve({
 						id: id,
+						to: to,
 						body: buf
 					});
 					return;
@@ -75,10 +79,21 @@ function getMessage(auth, id){
 			
 			resolve({
 				id: id,
+				to: to,
 				body: null
 			})
 		});
 	});
+}
+
+function parseTo(to){
+	var lti = to.indexOf('<');
+	var ati = to.indexOf('@');
+	
+	if(lti > -1)
+		return to.substring(lti + 1, ati);
+	
+	return to.subtr(0, ati);
 }
 
 
@@ -87,7 +102,7 @@ exports.deleteMessage = function(id) {
 		creds => deleteMessage(creds, id), 
 		err => {
 			console.log(err);
-			return [];
+			return;
 		});
 };
 
@@ -100,9 +115,9 @@ exports.listMessageIds = function() {
 		});
 };
 
-exports.getBodies = function(messageIds){
+exports.getMessages = function(messageIds){
 	return auth.authorize.then(
-		creds => getBodies(creds, messageIds), 
+		creds => getMessages(creds, messageIds), 
 		err => {
 			console.log(err);
 			return [];

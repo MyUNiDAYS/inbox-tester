@@ -1,6 +1,5 @@
-var gmail = require('./gmail.js');
+var tester = require('./tester.js');
 var express = require('express');
-
 
 var app = express();
 
@@ -10,38 +9,18 @@ app.get('/emails/find-url', function(req, res){
 	
 	var urlRegex = new RegExp(url, 'ig');
 	
-	gmail.listMessageIds()
-		.then(gmail.getBodies)
-		.then(msgs => {
-			var hits = msgs.map(msg => {
-
-				var hrefRegex = /href="([^"]+)"/ig;
-				
-				var urls = [];
-				
-				var match;
-				while ((match = hrefRegex.exec(msg.body)) !== null)
-					urls.push(match[1]);
-				
-				var matches = urls.filter(u => urlRegex.exec(u));
-				
-				return {
-					msgId: msg.id,
-					urls: matches
-				};
-			});
-			
+	tester.findUrl(to, urlRegex)
+		.then(hits => {
 			res.setHeader('Content-Type', 'application/json');
 			res.send(JSON.stringify(hits));
-		});
-	
+		});	
 });
 
 app.delete('/emails/:msgId', function(req, res){
 	
 	var id = req.params.msgId;
 	
-	gmail.deleteMessage(id)
+	tester.deleteMessage(id)
 		.then(function(){
 			res.sendStatus(200);
 		});
