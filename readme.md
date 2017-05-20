@@ -26,7 +26,9 @@ The use case for TO filtering is address extensions, allowing you to use a singl
 
 Create a new gmail account
 
-TODO: Auth instructions
+## Auth instructions
+
+See this: https://developers.google.com/gmail/api/quickstart/nodejs
 
 run `node src/index.js`
 
