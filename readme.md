@@ -38,9 +38,15 @@ Copy the provided token back into the console, as instructed.
 
 ## Find urls in emails
 
-Make a `GET` to `/emails/find-url`
+### API
 
-The following querystring parameters are supported
+`tester.findUrls(toPrefix, urlRegex)`
+
+### Web
+
+Make a `GET` to `/emails/find-url?url=&to=`
+
+### Params
 
 * `url` - a regex to apply to each `href=""` found within the email body
 * `to` - a string to match against the email address prefix (part before the @) in the TO header in the emails.
@@ -53,6 +59,16 @@ e.g.
 
 ## Delete an email
 
+Once you've found the email with the URL you want, you should clean up after yourself.
+
+### API
+
+`tester.deleteMessage(msgId)`
+
+### Web
+
 Make a `DELETE` request to `/emails/<messageId>`
+
+### Params
 
 where `<messageId>` is a `msgId` value obtained from the results of making a GET to `/emails/find-urls`
