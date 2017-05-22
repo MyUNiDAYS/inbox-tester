@@ -1,6 +1,8 @@
 var auth = require('./auth.js');
 var google = require('googleapis');
 
+// Docs: https://developers.google.com/gmail/api/v1/reference/users/messages
+
 function deleteMessage(auth, id) {
 	return new Promise(function(resolve, reject){
 		var gmail = google.gmail('v1');
