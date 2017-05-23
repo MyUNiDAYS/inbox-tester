@@ -32,7 +32,7 @@ exports.findUrl = function(toPrefix, urlRegex) {
 			return hits;
 		});
 	
-});
+};
 
 exports.deleteMessage = function(msgId) {
 	return gmail.deleteMessage(msgId);
