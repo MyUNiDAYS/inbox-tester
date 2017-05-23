@@ -8,7 +8,7 @@ var googleAuth = require('google-auth-library');
 var SCOPES = ['https://mail.google.com/'];
 var TOKEN_DIR = path.join((process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE || process.cwd()), '.credentials');
 var TOKEN_PATH = path.join(TOKEN_DIR,'inbox-tester.json');
-var CLIENT_SECRET_PATH = path.resolve('../client_secret.json');
+var CLIENT_SECRET_PATH = path.resolve(__dirname + '/../client_secret.json');
 
 
 exports.authorize = function() {
