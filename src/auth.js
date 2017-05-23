@@ -1,13 +1,14 @@
 var fs = require('fs');
+var path = require('path');
 var readline = require('readline');
 var googleAuth = require('google-auth-library');
 
 // If modifying these scopes, delete your previously saved credentials
 // at ~/.credentials/inbox-tester.json
 var SCOPES = ['https://mail.google.com/'];
-var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + '/.credentials/';
-var TOKEN_PATH = TOKEN_DIR + 'inbox-tester.json';
-var CLIENT_SECRET_PATH = '../client_secret.json';
+var TOKEN_DIR = path.join((process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE || process.cwd()), '.credentials');
+var TOKEN_PATH = path.join(TOKEN_DIR,'inbox-tester.json');
+var CLIENT_SECRET_PATH = path.resolve('../client_secret.json');
 
 
 exports.authorize = function() {
