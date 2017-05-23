@@ -7,7 +7,7 @@ exports.findUrl = function(toPrefix, urlRegex) {
 		.then(msgs => {
 			
 			if(toPrefix)
-				msgs = msgs.filter(msg => msg.toPrefix === to);
+				msgs = msgs.filter(msg => msg.to === toPrefix);
 						
 			var hits = msgs.map(msg => {
 			
@@ -21,7 +21,7 @@ exports.findUrl = function(toPrefix, urlRegex) {
 				
 				var matches = urls.filter(u => urlRegex.exec(u));
 				
-				console.log(msg.to);
+				//console.log(msg.to);
 				
 				return {
 					msgId: msg.id,

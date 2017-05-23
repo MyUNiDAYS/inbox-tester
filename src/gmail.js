@@ -95,7 +95,7 @@ function parseTo(to){
 	if(lti > -1)
 		return to.substring(lti + 1, ati);
 	
-	return to.subtr(0, ati);
+	return to.substr(0, ati);
 }
 
 
