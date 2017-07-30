@@ -2,26 +2,19 @@ var gmail = require('./gmail.js');
 
 exports.findUrl = function(toPrefix, urlRegex) {
 	
-	return gmail.listMessageIds()
+	return gmail.listMessageIds(toPrefix)
 		.then(gmail.getMessages)
 		.then(msgs => {
-			
-			if(toPrefix)
-				msgs = msgs.filter(msg => msg.to === toPrefix);
-						
+
 			var hits = msgs.map(msg => {
 			
-				var hrefRegex = /href="([^"]+)"/ig;
-				
+				var hrefRegex = /href="([^"]+)"/ig;				
 				var urls = [];
-				
 				var match;
 				while ((match = hrefRegex.exec(msg.body)) !== null)
 					urls.push(match[1]);
 				
 				var matches = urls.filter(u => urlRegex.exec(u));
-				
-				//console.log(msg.to);
 				
 				return {
 					msgId: msg.id,

@@ -22,26 +22,47 @@ function deleteMessage(auth, id) {
 	});
 };
 
-function listMessageIds(auth) {
+function listMessageIds(auth, toPrefix) {
 	return new Promise(function(resolve, reject){
 		var gmail = google.gmail('v1');
-		gmail.users.messages.list({
+
+		function pageResponseHandler(response,runningTotal){
+			var runningTotal = runningTotal.concat(response.messages);
+			var nextPageToken = response.nextPageToken;
+			if(nextPageToken){ //There's more to fetch
+				var nextRequest = {
+					auth: auth,
+					userId: 'me',
+					q: "".concat("to:",toPrefix,"%"),
+					pageToken: nextPageToken
+				};
+				getPageOfMessages(nextRequest,runningTotal);
+			} else { //There's no more to fetch
+				if (runningTotal.length == 0) {
+					resolve([]);
+				} else {
+					resolve(runningTotal.map(m => m.id)); //Just return an array of ids, we don't care about the threadId
+				}
+			}
+		}
+
+		function getPageOfMessages(thisRequest, runningTotal){
+			gmail.users.messages.list(thisRequest,function(err,response){
+				if (err) {
+					console.log('The API returned an error: ' + err);
+					reject(err);
+					return;
+				}
+				pageResponseHandler(response,runningTotal);
+			});
+		};
+
+		var initialRequest = {
 			auth: auth,
 			userId: 'me',
-		}, function(err, response) {
-			if (err) {
-				console.log('The API returned an error: ' + err);
-				reject(err);
-				return;
-			}
-			
-			var messages = response.messages;
-			if (messages.length == 0) {
-				resolve([]);
-			} else {
-				resolve(messages.map(m => m.id));
-			}
-		});
+			q: "".concat("to:",toPrefix,"%")
+		};
+		getPageOfMessages(initialRequest,[]);
 	});
 };
 
@@ -108,9 +129,9 @@ exports.deleteMessage = function(id) {
 		});
 };
 
-exports.listMessageIds = function() {
+exports.listMessageIds = function(toPrefix) {
 	return auth.authorize.then(
-		creds => listMessageIds(creds), 
+		creds => listMessageIds(creds,toPrefix), 
 		err => {
 			console.log(err);
 			return [];
