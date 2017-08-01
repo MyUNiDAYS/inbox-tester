@@ -60,7 +60,7 @@ function listMessageIds(auth, toPrefix) {
 		var initialRequest = {
 			auth: auth,
 			userId: 'me',
-			q: "".concat("to:",toPrefix,"%")
+			q: (toPrefix ? "".concat("to:",toPrefix,"%") : ""),
 		};
 		getPageOfMessages(initialRequest,[]);
 	});
