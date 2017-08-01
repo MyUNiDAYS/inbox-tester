@@ -33,7 +33,7 @@ function listMessageIds(auth, toPrefix) {
 				var nextRequest = {
 					auth: auth,
 					userId: 'me',
-					q: "".concat("to:",toPrefix,"%"),
+					q: (toPrefix ? "".concat("to:",toPrefix,"%") : ""),
 					pageToken: nextPageToken
 				};
 				getPageOfMessages(nextRequest,runningTotal);
