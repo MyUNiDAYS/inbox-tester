@@ -27,7 +27,10 @@ function listMessageIds(auth, toPrefix) {
 		var gmail = google.gmail('v1');
 
 		function pageResponseHandler(response,runningTotal){
-			var runningTotal = runningTotal.concat(response.messages);
+			var thisRunningTotal = runningTotal;
+			if(response.messages){
+				thisRunningTotal = thisRunningTotal.concat(response.messages);
+			}
 			var nextPageToken = response.nextPageToken;
 			if(nextPageToken){ //There's more to fetch
 				var nextRequest = {
@@ -36,12 +39,12 @@ function listMessageIds(auth, toPrefix) {
 					q: (toPrefix ? "".concat("to:",toPrefix,"%") : ""),
 					pageToken: nextPageToken
 				};
-				getPageOfMessages(nextRequest,runningTotal);
+				getPageOfMessages(nextRequest,thisRunningTotal);
 			} else { //There's no more to fetch
-				if (runningTotal.length == 0) {
+				if (thisRunningTotal.length == 0) {
 					resolve([]);
 				} else {
-					resolve(runningTotal.map(m => m.id)); //Just return an array of ids, we don't care about the threadId
+					resolve(thisRunningTotal.map(m => m.id)); //Just return an array of ids, we don't care about the threadId
 				}
 			}
 		}
