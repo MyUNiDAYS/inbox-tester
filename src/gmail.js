@@ -74,34 +74,35 @@ function getMessages(auth, messageIds){
 }
 
 function getMessage(auth, id){
-	return new Promise((resolve, reject) => {
-		var gmail = google.gmail('v1');
-		gmail.users.messages.get({
-			auth: auth,
-			userId: 'me',
-			id: id
-		}, function(err, response) {
-			if (err) {
-				console.log('The API returned an error: ' + err);
-				return;
-			}
-			
-			var toHeaders = response.payload.headers.filter(h => h.name === 'To');
-			var to = toHeaders.length > 0 ? parseTo(toHeaders[0].value) : null;
-						
-			for(var i = 0; i < response.payload.parts.length; i++)
-			{
-				var part = response.payload.parts[i];
-				if(part.mimeType == 'text/html') {
-					var buf = Buffer.from(part.body.data, 'base64').toString("utf-8");
-					resolve({
-						id: id,
-						to: to,
-						body: buf
-					});
-					return;
-				}
-			}
+    return new Promise((resolve, reject) => {
+        var gmail = google.gmail('v1');
+        gmail.users.messages.get({
+            auth: auth,
+            userId: 'me',
+            id: id
+        }, function(err, response) {
+            if (err) {
+                console.log('The API returned an error: ' + err);
+                return;
+            }
+            
+            var toHeaders = response.payload.headers.filter(h => h.name === 'To');
+            var to = toHeaders.length > 0 ? parseTo(toHeaders[0].value) : null;
+            
+            var numPayloadParts = response.payload.parts ? response.payload.parts.length : 0;
+            for(var i = 0; i < numPayloadParts; i++)
+            {
+                var part = response.payload.parts[i];
+                if(part.mimeType == 'text/html') {
+                    var buf = Buffer.from(part.body.data, 'base64').toString("utf-8");
+                    resolve({
+                        id: id,
+                        to: to,
+                        body: buf
+                    });
+                    return;
+                }
+            }
 			
 			resolve({
 				id: id,
