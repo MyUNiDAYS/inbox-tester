@@ -1,14 +1,14 @@
 var fs = require('fs');
 var path = require('path');
 var readline = require('readline');
-var googleAuth = require('google-auth-library');
+var {google} = require('googleapis');
 
 // If modifying these scopes, delete your previously saved credentials
 // at ~/.credentials/inbox-tester.json
-var SCOPES = ['https://mail.google.com/'];
+var SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 var TOKEN_DIR = path.join((process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE || process.cwd()), '.credentials');
 var TOKEN_PATH = path.join(TOKEN_DIR,'inbox-tester.json');
-var CLIENT_SECRET_PATH = path.resolve(__dirname + '/../client_secret.json');
+var CLIENT_SECRET_PATH = path.resolve(__dirname + '/../credentials.json');
 
 
 exports.authorize = function() {
@@ -23,8 +23,7 @@ exports.authorize = function() {
 				var clientSecret = credentials.installed.client_secret;
 				var clientId = credentials.installed.client_id;
 				var redirectUrl = credentials.installed.redirect_uris[0];
-				var auth = new googleAuth();
-				var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+				var oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUrl);
 
 				// Check if we have previously stored a token.
 				fs.readFile(TOKEN_PATH, function(err, token) {
@@ -64,15 +63,16 @@ function getNewToken(oauth2Client, callback) {
 	});
 
 	rl.question('Enter the code from that page here: ', function(code) {
-	rl.close();
-	oauth2Client.getToken(code, function(err, token) {
-		if (err) {
-			console.log('Error while trying to retrieve access token', err);
-			return;
-		}
-		oauth2Client.credentials = token;
-		storeToken(token);
-		callback(oauth2Client);
+		rl.close();
+		oauth2Client.getToken(code, function(err, token) {
+			if (err) {
+				console.log('Error while trying to retrieve access token', err);
+				return;
+			}
+			oauth2Client.credentials = token;
+			storeToken(token, () => {
+				callback(oauth2Client);
+			});
 		});
 	});
 }
@@ -82,7 +82,7 @@ function getNewToken(oauth2Client, callback) {
  *
  * @param {Object} token The token to store to disk.
  */
-function storeToken(token) {
+function storeToken(token, callback) {
 	try {
 		fs.mkdirSync(TOKEN_DIR);
 	} catch (err) {
@@ -90,7 +90,12 @@ function storeToken(token) {
 			throw err;
 	}
 	
-	fs.writeFile(TOKEN_PATH, JSON.stringify(token));
-	
-	console.log('Token stored to ' + TOKEN_PATH);
+	fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
+		if (err) {
+			console.log('Failed to save token');
+		} else {
+			console.log('Token stored to ' + TOKEN_PATH);
+		}
+		callback();
+	});
 }

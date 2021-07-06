@@ -4,12 +4,15 @@ var express = require('express');
 var app = express();
 
 app.get('/emails/find-url', function(req, res){
-	var to = req.query.to;
 	var url = req.query.url;
-	
+	if (!url) {
+		res.sendStatus(400);
+		return;
+	}
+
 	var urlRegex = new RegExp(url, 'ig');
 	
-	tester.findUrl(to, urlRegex)
+	tester.findUrl(req.query.to, urlRegex)
 		.then(hits => {
 			res.setHeader('Content-Type', 'application/json');
 			res.send(JSON.stringify(hits));
